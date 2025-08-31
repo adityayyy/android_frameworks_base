@@ -366,7 +366,6 @@ public class StatusBarStateControllerImpl implements
             for (RankedListener rl : new ArrayList<>(mListeners)) {
                 rl.mListener.onDozingChanged(isDozing);
             }
-            ScrimUtils.get().onDozingChanged(isDozing);
             DejankUtils.stopDetectingBlockingIpcs(tag);
         }
 

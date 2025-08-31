@@ -38,7 +38,7 @@ class ScrimUtils private constructor() {
 
     private val listeners = WeakListenerManager<ScrimEventListener>()
 
-    private val mIsDozing = AtomicBoolean(false)
+    private var mIsDozing = false
     private val mQsVisible = AtomicBoolean(false)
     private val mPulsing = AtomicBoolean(false)
 
@@ -78,8 +78,9 @@ class ScrimUtils private constructor() {
     }
 
     fun onDozingChanged(dozing: Boolean) {
-        if (mIsDozing.getAndSet(dozing) != dozing) {
-            notifyListeners(Consumer { it.onDozingChanged() })
+        if (mIsDozing != dozing) {
+            mIsDozing = dozing
+            listeners.notifyOnMain { it.onDozingChanged() }
         }
     }
 
@@ -117,7 +118,8 @@ class ScrimUtils private constructor() {
     fun onScreenTurnedOff() =
         notifyListeners(Consumer { it.onScreenTurnedOff() })
 
-    fun isDozing(): Boolean = mIsDozing.get()
+    fun isDozing(): Boolean = mIsDozing
+
     fun isKeyguardShowing(): Boolean = mKeyguardShowing || mBarState == KEYGUARD
 
     fun isPanelFullyCollapsed(): Boolean =
