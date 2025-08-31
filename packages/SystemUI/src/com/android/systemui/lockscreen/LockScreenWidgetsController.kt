@@ -46,7 +46,7 @@ class LockScreenWidgetsController(
     internal val flashlightController: FlashlightController
 ) {
 
-    val widgetSettingsRepository = LockscreenWidgetSettingsRepository(context)
+    val widgetSettingsRepository = LockscreenWidgetSettingsRepository(context, this)
     val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     val dataController = networkController.mobileDataController
@@ -54,9 +54,10 @@ class LockScreenWidgetsController(
     val widgetFactory = WidgetFactory(context, this)
 
     private var listening = false
-
-    private var currentSettings: WidgetSettings? = null
     private val container: FlexboxLayout = view.findViewById(R.id.main_widgets_container)
+    private var mainWidgets = mutableListOf<WidgetAction>()
+    private val widgetViewCache = mutableMapOf<WidgetAction, LaunchableImageView>()
+    private var currentSettings: WidgetSettings? = null
 
     var cameraId: String? = null
     var isFlashOn = false
@@ -65,63 +66,49 @@ class LockScreenWidgetsController(
     val listeners = mutableMapOf<String, () -> Unit>()
     val callbacks = LsWidgetsCallbacksController(this)
     
-    val scrimUtils get() = ScrimUtils.get()
+    val scrimUtils: ScrimUtils get() = ScrimUtils.get()
     val bluetoothEnabled get() = BluetoothAdapter.getDefaultAdapter()?.isEnabled == true
     val dozing get() = scrimUtils.isDozing()
 
-    private var mainWidgets = mutableListOf<WidgetAction>()
     val widgetButtons = mutableMapOf<WidgetAction, LaunchableImageView>()
-    private val widgetViewCache = mutableMapOf<WidgetAction, LaunchableImageView>()
+    val settings get() = widgetSettingsRepository.settings
 
     fun init() {
         runCatching {
             cameraId = cameraManager.cameraIdList.firstOrNull()
         }
-        updateSettings()
-        scrimUtils.addListener(callbacks.scrimUtils)
-        startListening()
+        callbacks.observe()
     }
 
     fun dispose() {
-        stopListening()
-        scrimUtils.removeListener(callbacks.scrimUtils)
-    }
-
-    private fun addListener(key: String, register: () -> Unit, unregister: () -> Unit) {
-        register()
-        listeners[key] = unregister
+        callbacks.dispose()
     }
     
     fun updateSettings() {
-        val settings = widgetSettingsRepository.settings
         if (settings != currentSettings) {
             currentSettings = settings
             updateWidgetViews()
         }
     }
 
+    private fun addListener(key: String, register: () -> Unit, unregister: () -> Unit) {
+        register()
+        listeners[key] = unregister
+    }
+
     fun startListening() {
         if (listening) return
+        callbacks.updateWidgets()
         val shouldEnableListeners = currentSettings?.isEnabled == true && widgetList.isNotEmpty()
         if (shouldEnableListeners) {
             addListeners()
-            states.refresh()
         } else {
-            cancelListeners()
+            stopListening()
         }
-    }
-
-    fun stopListening() {
-        cancelListeners()
     }
 
     private fun addListeners() {
         if (listening) return
-        addListener(
-            key = "configurationListener",
-            register = { configurationController.addCallback(callbacks.configurationListener) },
-            unregister = { configurationController.removeCallback(callbacks.configurationListener) }
-        )
         widgetList.forEach { widget ->
             widget.registerCallback(this)
             listeners["widget_${widget.name}"] = {
@@ -131,7 +118,7 @@ class LockScreenWidgetsController(
         listening = true
     }
 
-    private fun cancelListeners() {
+    fun stopListening() {
         if (!listening) return
         listeners.values.forEach { it.invoke() }
         listeners.clear()
@@ -151,15 +138,14 @@ class LockScreenWidgetsController(
         mainWidgets.clear()
         mainWidgets.addAll(widgetList)
         widgetButtons.clear()
-        widgetList.take(4).forEach { action ->
+        widgetList.take(4).forEachIndexed { index, action ->
             val widgetView = widgetViewCache[action] ?: widgetFactory.createWidgetView(action).also {
                 widgetViewCache[action] = it
             }
-            widgetFactory.updateWidgetSize(widgetView)
+            widgetFactory.updateWidgetSize(widgetView, index, widgetList.size)
             container.addView(widgetView)
             widgetButtons[action] = widgetView
         }
-        callbacks.updateWidgets()
         updateWidgetsVisibility()
     }
 
@@ -185,16 +171,6 @@ class LockScreenWidgetsController(
     fun showBluetoothDialog(view: View) {
         view.post {
             detailsContentViewModel.get().showDialog(Expandable.fromView(view))
-        }
-    }
-    
-    fun maybeKeyguardDismiss(dismiss: Boolean) {
-        if (dismiss) {
-            stopListening()
-        } else {
-            view.postDelayed({
-                startListening()
-            }, 500)
         }
     }
 }

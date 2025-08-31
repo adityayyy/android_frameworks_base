@@ -25,8 +25,10 @@ class WidgetStates(
     private fun updateStateIfChanged(action: WidgetAction, newState: Boolean) {
         if (lastStates[action] != newState) {
             lastStates[action] = newState
-            controller.widgetButtons[action]?.let {
-                controller.widgetFactory.updateWidgetState(it, action, newState)
+            controller.view.post {
+                controller.widgetButtons[action]?.let {
+                    controller.widgetFactory.updateWidgetState(it, action, newState)
+                }
             }
         }
     }
@@ -69,11 +71,9 @@ class WidgetStates(
     }
     
     fun refresh() {
-        updateTorch()
-        updateRinger()
-        updateBluetooth()
-        updateWiFi(controller.callbacks.wifiInfo.enabled)
-        updateMobileData(controller.networkController.mobileDataController.isMobileDataEnabled)
-        updateHotspot()
+        for (action in controller.widgetButtons.keys) {
+            val newState = isActive(action)
+            updateStateIfChanged(action, newState)
+        }
     }
 }

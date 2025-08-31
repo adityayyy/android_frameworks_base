@@ -35,8 +35,7 @@ object LsWidgetsRes {
     val WIDGET_BG_DOZING_INACTIVE = R.drawable.lockscreen_widget_bg_dozing_inactive
     val COLOR_BG_DARK = R.color.lockscreen_widget_background_color_dark
     val COLOR_BG_LIGHT = R.color.lockscreen_widget_background_color_light
-    val COLOR_BG_ADARK = R.color.lockscreen_widget_active_color_dark
-    val COLOR_BG_ALIGHT = R.color.lockscreen_widget_active_color_light
+    val COLOR_BG_ACTIVE = R.color.dot_color_red
     val WIDGET_CIRCLE_SIZE = R.dimen.kg_widget_circle_size
     val WIDGET_MARGIN_HORIZONTAL = R.dimen.kg_widgets_margin_horizontal
     val WIDGET_ICON_PADDING = R.dimen.kg_widgets_icon_padding

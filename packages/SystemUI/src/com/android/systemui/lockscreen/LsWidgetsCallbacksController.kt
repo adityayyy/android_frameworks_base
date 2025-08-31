@@ -35,36 +35,21 @@ class LsWidgetsCallbacksController(private val controller: LockScreenWidgetsCont
         override fun onThemeChanged() {
             controller.updateWidgetViews()
         }
+        override fun onDensityOrFontScaleChanged() {
+            controller.updateWidgetViews()
+        }
     }
 
-    val scrimUtils = object : ScrimUtils.ScrimEventListener {
+    val scrimUtilsCb = object : ScrimUtils.ScrimEventListener {
         override fun onDozingChanged() {
             updateWidgets()
         }
         override fun onKeyguardShowingChanged(showing: Boolean) {
-            controller.updateSettings()
             if (showing) {
                 controller.startListening()
             } else {
                 controller.stopListening()
             }
-        }
-        override fun onScreenTurnedOff() {
-            controller.updateSettings()
-            controller.stopListening()
-        }
-        override fun onStartedWakingUp() {
-            controller.updateSettings()
-            controller.startListening()
-        }
-        override fun onPrimaryBouncerShowingChanged(showing: Boolean) {
-            controller.maybeKeyguardDismiss(showing)
-        }
-        override fun onKeyguardGoingAwayChanged(goingAway: Boolean) {
-            controller.maybeKeyguardDismiss(goingAway)
-        }
-        override fun onKeyguardFadingAwayChanged(fadingAway: Boolean) {
-            controller.maybeKeyguardDismiss(fadingAway)
         }
     }
 
@@ -144,8 +129,25 @@ class LsWidgetsCallbacksController(private val controller: LockScreenWidgetsCont
     }
     
     fun updateWidgets() {
-        controller.widgetButtons.forEach { (action, view) ->
-            controller.widgetFactory.updateWidgetState(view, action, controller.states.isActive(action))
+        controller.view.post {
+            controller.states.refresh()
+            controller.widgetButtons.forEach { (action, view) ->
+                controller.widgetFactory.updateWidgetState(view, action, controller.states.isActive(action))
+            }
         }
+    }
+    
+    fun observe() {
+        controller.scrimUtils.addListener(scrimUtilsCb)
+        controller.configurationController.addCallback(configurationListener)
+        controller.widgetSettingsRepository.observe()
+        controller.startListening()
+    }
+    
+    fun dispose() {
+        controller.scrimUtils.removeListener(scrimUtilsCb)
+        controller.configurationController.removeCallback(configurationListener)
+        controller.stopListening()
+        controller.widgetSettingsRepository.dispose()
     }
 }

@@ -18,6 +18,7 @@ package com.android.systemui.lockscreen
 import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
+import android.graphics.Color
 import android.view.Gravity
 import android.view.View
 import android.widget.GridLayout
@@ -30,12 +31,12 @@ class WidgetFactory(
     private val context: Context,
     private val controller: LockScreenWidgetsController
 ) {
-    private val darkColor get() = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_DARK)
-    private val lightColor get() = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_LIGHT)
-    private val darkColorActive get() = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_ADARK)
-    private val lightColorActive get() = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_ALIGHT)
+    private val darkColor = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_DARK)
+    private val lightColor = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_LIGHT)
+    private val colorActive = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_ACTIVE)
+    private val white = Color.WHITE
 
-    private fun isNightMode(): Boolean =
+    private val isNightMode: Boolean get() =
         (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
 
@@ -50,8 +51,6 @@ class WidgetFactory(
         return LaunchableImageView(context).apply {
             isFocusable = true
             isClickable = true
-            setBackgroundResource(getWidgetBackground(false))
-            setImageResource(action.inactiveRes)
             setOnClickListener { action.onClick(controller) }
             action.onLongClick?.let { longClick ->
                 setOnLongClickListener { v -> longClick(controller, v) }
@@ -60,48 +59,47 @@ class WidgetFactory(
     }
 
     fun updateWidgetState(view: LaunchableImageView, action: WidgetAction, active: Boolean) {
-        view.setImageResource(if (active) action.activeRes else action.inactiveRes)
-        view.setBackgroundResource(getWidgetBackground(active))
-        if (!controller.dozing) {
-            setTint(view, active)
-        } else {
-            view.backgroundTintList = null
-            view.imageTintList =
-                ColorStateList.valueOf(ContextCompat.getColor(context, android.R.color.white))
+        val iconRes = when {
+            active -> action.activeRes
+            else -> action.inactiveRes
         }
+        val bgRes = when {
+            controller.dozing -> {
+                if (active) {
+                    LsWidgetsRes.WIDGET_BG_DOZING_ACTIVE
+                } else {
+                    LsWidgetsRes.WIDGET_BG_DOZING_INACTIVE
+                }
+            }
+            else -> LsWidgetsRes.WIDGET_BG
+        }
+        val (bgTint, iconTint) = when {
+            controller.dozing -> 0 to white
+            active -> colorActive to white
+            isNightMode -> darkColor to lightColor
+            else -> lightColor to darkColor
+        }
+        view.setImageResource(iconRes)
+        view.setBackgroundResource(bgRes)
+        view.backgroundTintList = when {
+            controller.dozing -> null
+            else -> ColorStateList.valueOf(bgTint)
+        }
+        view.imageTintList = ColorStateList.valueOf(iconTint)
     }
 
-    fun updateWidgetSize(view: LaunchableImageView) {
+    fun updateWidgetSize(view: LaunchableImageView, position: Int, total: Int) {
         val scaleRatio = context.scaleRatio
         val widgetSize = (context.resources.getDimensionPixelSize(LsWidgetsRes.WIDGET_CIRCLE_SIZE) * scaleRatio).toInt()
         val spacing = (context.resources.getDimensionPixelSize(LsWidgetsRes.WIDGET_MARGIN_HORIZONTAL) * scaleRatio).toInt()
         val iconPadding = (context.resources.getDimensionPixelSize(LsWidgetsRes.WIDGET_ICON_PADDING) * scaleRatio).toInt()
+        val leftMargin = if (position == 0) 0 else spacing
+        val rightMargin = if (position == total - 1) 0 else spacing
         view.layoutParams = FlexboxLayout.LayoutParams(widgetSize, widgetSize).apply {
-            setMargins(spacing, spacing, spacing, spacing)
+            setMargins(leftMargin, spacing, rightMargin, spacing)
             flexGrow = 0f
             flexShrink = 0f
         }
         view.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
-    }
-
-    private fun setTint(view: LaunchableImageView, active: Boolean) {
-        val (bgTint, iconTint) = when {
-            active && isNightMode() -> darkColorActive to darkColor
-            active -> lightColorActive to lightColor
-            isNightMode() -> darkColor to lightColor
-            else -> lightColor to darkColor
-        }
-
-        view.backgroundTintList = ColorStateList.valueOf(bgTint)
-        view.imageTintList = ColorStateList.valueOf(iconTint)
-    }
-
-    private fun getWidgetBackground(active: Boolean): Int {
-        return if (controller.dozing) {
-            if (active) LsWidgetsRes.WIDGET_BG_DOZING_ACTIVE
-            else LsWidgetsRes.WIDGET_BG_DOZING_INACTIVE
-        } else {
-            LsWidgetsRes.WIDGET_BG
-        }
     }
 }

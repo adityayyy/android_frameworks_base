@@ -17,57 +17,68 @@ package com.android.systemui.lockscreen
 
 import android.content.ContentResolver
 import android.content.Context
-import android.content.res.Configuration
 import android.database.ContentObserver
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.UserHandle
-import androidx.core.content.ContextCompat
 import android.provider.Settings
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.Dispatchers
 
 data class WidgetSettings(
     val settings: String,
-    val isEnabled: Boolean,
-    val isNight: Boolean,
-    val theme: Int,
-    val density: Float
+    val isEnabled: Boolean
 )
 
 class LockscreenWidgetSettingsRepository(
-    private val context: Context
+    private val context: Context,
+    private val controller: LockScreenWidgetsController
 ) {
     private val contentResolver: ContentResolver = context.contentResolver
+    private val handler = Handler(Looper.getMainLooper())
+    private var observing = false
 
-    val settings: WidgetSettings 
+    private val SETTINGS_URI: Uri =
+        Settings.System.getUriFor("lockscreen_widgets_extras")
+    private val ENABLED_URI: Uri =
+        Settings.System.getUriFor("lockscreen_widgets_enabled")
+
+    val settings: WidgetSettings
         get() {
-            val resources = context.resources
-            val density = resources.displayMetrics.density
-
             val settings = Settings.System.getStringForUser(
                 contentResolver,
                 "lockscreen_widgets_extras",
                 UserHandle.USER_CURRENT
             ) ?: ""
-
             val isEnabled = Settings.System.getIntForUser(
                 contentResolver,
                 "lockscreen_widgets_enabled",
                 0,
                 UserHandle.USER_CURRENT
             ) == 1
-
-            val isNight = (resources.configuration.uiMode and
-                    Configuration.UI_MODE_NIGHT_MASK) ==
-                    Configuration.UI_MODE_NIGHT_YES
-
-            val darkColorActive = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_ADARK)
-            val lightColorActive = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_ALIGHT)
-
-            val theme = 31 * darkColorActive + lightColorActive
-
-            return WidgetSettings(settings, isEnabled, isNight, theme, density)
+            return WidgetSettings(settings, isEnabled)
         }
+
+    private var observer: ContentObserver = object : ContentObserver(handler) {
+            override fun onChange(selfChange: Boolean) {
+                controller.updateSettings()
+            }
+        }
+
+    fun observe() {
+        if (observing) return
+        contentResolver.registerContentObserver(
+            SETTINGS_URI, false, observer, UserHandle.USER_CURRENT
+        )
+        contentResolver.registerContentObserver(
+            ENABLED_URI, false, observer, UserHandle.USER_CURRENT
+        )
+        controller.updateSettings()
+        observing = true
+    }
+
+    fun dispose() {
+        if (!observing) return
+        contentResolver.unregisterContentObserver(observer)
+        observing = false
+    }
 }

@@ -28,6 +28,8 @@
         android:id="@+id/main_widgets_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingStart="@dimen/kg_widgets_margin_side"
+        android:paddingEnd="@dimen/kg_widgets_margin_side"
         app:flexDirection="row"
         app:justifyContent="flex_start"
         app:alignItems="center"
