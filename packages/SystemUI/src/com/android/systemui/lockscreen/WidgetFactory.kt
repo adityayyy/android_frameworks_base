@@ -33,7 +33,6 @@ class WidgetFactory(
 ) {
     private val darkColor = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_DARK)
     private val lightColor = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_LIGHT)
-    private val colorActive = ContextCompat.getColor(context, LsWidgetsRes.COLOR_BG_ACTIVE)
     private val white = Color.WHITE
 
     private val isNightMode: Boolean get() =
@@ -59,32 +58,21 @@ class WidgetFactory(
     }
 
     fun updateWidgetState(view: LaunchableImageView, action: WidgetAction, active: Boolean) {
-        val iconRes = when {
-            active -> action.activeRes
-            else -> action.inactiveRes
-        }
+        val iconRes = if (active) action.activeRes else action.inactiveRes
         val bgRes = when {
-            controller.dozing -> {
-                if (active) {
-                    LsWidgetsRes.WIDGET_BG_DOZING_ACTIVE
-                } else {
-                    LsWidgetsRes.WIDGET_BG_DOZING_INACTIVE
-                }
-            }
-            else -> LsWidgetsRes.WIDGET_BG
+            controller.dozing && active -> LsWidgetsRes.WIDGET_BG_DOZING_ACTIVE
+            controller.dozing && !active -> LsWidgetsRes.WIDGET_BG_DOZING_INACTIVE
+            active -> LsWidgetsRes.WIDGET_BG_ACTIVE
+            isNightMode -> LsWidgetsRes.WIDGET_BG_DARK
+            else -> LsWidgetsRes.WIDGET_BG_LIGHT
         }
-        val (bgTint, iconTint) = when {
-            controller.dozing -> 0 to white
-            active -> colorActive to white
-            isNightMode -> darkColor to lightColor
-            else -> lightColor to darkColor
+        val iconTint = when {
+            controller.dozing || active -> white
+            isNightMode -> lightColor
+            else -> darkColor
         }
         view.setImageResource(iconRes)
         view.setBackgroundResource(bgRes)
-        view.backgroundTintList = when {
-            controller.dozing -> null
-            else -> ColorStateList.valueOf(bgTint)
-        }
         view.imageTintList = ColorStateList.valueOf(iconTint)
     }
 

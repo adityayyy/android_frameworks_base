@@ -30,12 +30,13 @@ object LsWidgetsRes {
     val WIFI_INACTIVE = R.drawable.ic_wifi_off_24
     val HOTSPOT_ACTIVE = R.drawable.qs_hotspot_icon_on
     val HOTSPOT_INACTIVE = R.drawable.qs_hotspot_icon_off
-    val WIDGET_BG = R.drawable.lockscreen_widget_background_circle
+    val WIDGET_BG_LIGHT = R.drawable.lockscreen_widget_bg_light
+    val WIDGET_BG_DARK = R.drawable.lockscreen_widget_bg_dark
+    val WIDGET_BG_ACTIVE = R.drawable.lockscreen_widget_bg_active
     val WIDGET_BG_DOZING_ACTIVE = R.drawable.lockscreen_widget_bg_dozing_active
     val WIDGET_BG_DOZING_INACTIVE = R.drawable.lockscreen_widget_bg_dozing_inactive
     val COLOR_BG_DARK = R.color.lockscreen_widget_background_color_dark
     val COLOR_BG_LIGHT = R.color.lockscreen_widget_background_color_light
-    val COLOR_BG_ACTIVE = R.color.dot_color_red
     val WIDGET_CIRCLE_SIZE = R.dimen.kg_widget_circle_size
     val WIDGET_MARGIN_HORIZONTAL = R.dimen.kg_widgets_margin_horizontal
     val WIDGET_ICON_PADDING = R.dimen.kg_widgets_icon_padding
