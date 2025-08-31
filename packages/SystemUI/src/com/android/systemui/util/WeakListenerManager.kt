@@ -67,6 +67,16 @@ class WeakListenerManager<T> {
         }
     }
 
+    fun notifyOnMain(action: (T) -> Unit) {
+        mainHandler.post {
+            val snapshot = listeners.mapNotNull { it.get() }.toList()
+            cleanup()
+            snapshot.forEach { listener ->
+                action(listener)
+            }
+        }
+    }
+
     fun notifyConsumer(action: Consumer<T>) {
         notify { action.accept(it) }
     }
