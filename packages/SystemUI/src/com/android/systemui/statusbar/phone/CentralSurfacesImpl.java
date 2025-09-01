@@ -583,12 +583,10 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces {
         }
         @Override
         public void onGameStart(String packageName) {
-            NTCpuBindController.INSTANCE().gameBoost(true);
         }
         @Override
         public void onGameLeave() {
             mSuppressFullscreenIntent = false;
-            NTCpuBindController.INSTANCE().gameBoost(false);
         }
     };
 
