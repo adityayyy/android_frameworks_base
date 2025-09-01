@@ -140,9 +140,6 @@ public final class ShadeControllerImpl extends BaseShadeControllerImpl {
             mNotificationShadeWindowController.setNotificationShadeFocusable(false);
 
             mNotifShadeWindowViewController.get().cancelExpandHelper();
-            if (com.android.systemui.util.ScreenAnimationController.INSTANCE().isPanelExpandedWhenScreenOff()) {
-                delayed = true;
-            }
             getNpvc().collapse(true, delayed, speedUpFactor);
         }
     }

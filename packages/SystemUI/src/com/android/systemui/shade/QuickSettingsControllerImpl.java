@@ -2531,7 +2531,7 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
         void onFlingQsWithoutClick(ValueAnimator animator, float qsExpansionHeight,
                 float target, float vel);
     }
-
+    
     public final void onAppLockerUpdated() {
         NotificationStackScrollLayoutController controller = mNotificationStackScrollLayoutController;
         if (controller == null || controller.getView() == null) {
@@ -2560,6 +2560,7 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
             view.post(() -> view.onAppLockerUpdate());
         }
     }
+<<<<<<< HEAD
     
     public final void onTransparencyUpdated() {
         NotificationStackScrollLayoutController controller = mNotificationStackScrollLayoutController;
@@ -2575,9 +2576,5 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
                 child.post(row::updateIfNeeded);
             }
         }
-    }
-
-    public boolean isVisible() {
-        return mVisible;
     }
 }
