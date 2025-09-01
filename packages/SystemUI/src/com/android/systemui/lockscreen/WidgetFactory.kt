@@ -58,14 +58,25 @@ class WidgetFactory(
     }
 
     fun updateWidgetState(view: LaunchableImageView, action: WidgetAction, active: Boolean) {
+        view.setBackgroundResource(0)
         val iconRes = if (active) action.activeRes else action.inactiveRes
-        val bgRes = when {
-            controller.dozing && active -> LsWidgetsRes.WIDGET_BG_DOZING_ACTIVE
-            controller.dozing && !active -> LsWidgetsRes.WIDGET_BG_DOZING_INACTIVE
-            active -> LsWidgetsRes.WIDGET_BG_ACTIVE
-            isNightMode -> LsWidgetsRes.WIDGET_BG_DARK
-            else -> LsWidgetsRes.WIDGET_BG_LIGHT
-        }
+        val bgRes = if (controller.dozing) {
+                if (active) {
+                    LsWidgetsRes.WIDGET_BG_DOZING_ACTIVE
+                } else {
+                    LsWidgetsRes.WIDGET_BG_DOZING_INACTIVE
+                }
+            } else {
+                if (active) {
+                    LsWidgetsRes.WIDGET_BG_ACTIVE
+                } else {
+                    if (isNightMode) { 
+                        LsWidgetsRes.WIDGET_BG_DARK
+                    } else { 
+                        LsWidgetsRes.WIDGET_BG_LIGHT
+                    }
+                }
+            }
         val iconTint = when {
             controller.dozing || active -> white
             isNightMode -> lightColor
